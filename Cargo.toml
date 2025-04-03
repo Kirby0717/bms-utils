@@ -2,9 +2,12 @@
 name = "bms-utils"
 version = "0.1.0"
 edition = "2024"
+
 license = "MIT OR Apache-2.0"
 authors = ["Kirby0717 <niconicoyusei@gmail.com>"]
 description = "BMSのファイル(.bms .bme .bml .pms .bmson)に関するライブラリ\nLibrary for BMS files. (.bms .bme .bml .pms .bmson)"
+readme = "README.md"
+repository = "https://github.com/Kirby0717/bms-utils"
 
 [dependencies]
 log = "0.4.27"
