@@ -237,7 +237,7 @@ fn main_data(input: &mut &str) -> ModalResult<Token> {
             ch,
             repeat(
                 0..,
-                preceded(space0, channel.map(|ch| ch.to_base_36() as f64)),
+                preceded(space0, channel.map(|ch| ch.to_base_36() as f64 / 2.0)),
             )
             .parse_next(input)?,
         ),
