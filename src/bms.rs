@@ -264,11 +264,11 @@ impl RawBms {
                         BgaPoorAlpha(data) =>
                             measure.bga_poor_alpha.push(data),
                         Note(ch, data) =>
-                            measure.note.entry(*ch).or_default().push(convert_channel_vec(data)),
+                            measure.notes.entry(*ch).or_default().push(convert_channel_vec(data)),
                         InvisibleNote(ch, data) =>
-                            measure.invisible_note.entry(*ch).or_default().push(convert_channel_vec(data)),
+                            measure.invisible_notes.entry(*ch).or_default().push(convert_channel_vec(data)),
                         LongNote(ch, data) =>
-                            measure.long_note.entry(*ch).or_default().push(convert_channel_vec(data)),
+                            measure.long_notes.entry(*ch).or_default().push(convert_channel_vec(data)),
                         Text(data) =>
                             measure.text.push(convert_channel_vec(data)),
                         BgaArgb(data) =>
@@ -451,14 +451,12 @@ pub struct Bms<'a> {
     pub rank: Option<i32>,
     /// より細かい判定幅
     ///
-    /// 100をRank2と同じとするのが主流だが、Rankの1に相当する数が実装依存
+    /// 100をRank2と同じとするのが主流だが、
+    /// Rankの1に相当する数が実装依存
     pub def_ex_rank: Option<f64>,
     /// ゲージ増加の総数
     ///
-    /// 全ての判定が最良のときのゲージの増加量
-    /// この値からキー1つあたりのゲージ増加量を計算する
-    /// 特にLNの種類によって判定数が変化するので、
-    /// それに対応するため
+    /// 全て最良判定のときのゲージの増加量
     pub total: Option<f64>,
     /// 譜面全体の音量
     pub volume_wav: Option<f64>,
@@ -477,15 +475,15 @@ pub struct Bms<'a> {
     ///
     /// 主流な名付けは
     ///
-    /// 1 : EASY, BEGINNER, LIGHT
+    /// 1 : EASY, BEGINNER, LIGHT ...
     ///
-    /// 2 : NORMAL, STANDARD
+    /// 2 : NORMAL, STANDARD ...
     ///
-    /// 3 : HARD, HYPER
+    /// 3 : HARD, HYPER ...
     ///
-    /// 4 : EX, ANOTHER
+    /// 4 : EX, ANOTHER ...
     ///
-    /// 5 : BLACK_ANOTHER, INSANE, 発狂
+    /// 5 : BLACK_ANOTHER, INSANE, 発狂 ...
     pub difficulty: Option<i32>,
     /// タイトル
     pub title: Option<&'a str>,
@@ -531,6 +529,7 @@ pub struct Bms<'a> {
     /// 例
     ///
     /// 1 : 0011000000002200
+    ///
     /// 2 : 0011111111220000
     pub ln_type: Option<i32>,
     /// LNの音を鳴らす終点idの指定
@@ -557,7 +556,8 @@ pub struct Bms<'a> {
     pub speed: HashMap<usize, f64>,
     /// 曲選択時に流れる音声
     ///
-    /// ここで指定されていなければ、previewと名前が付いた音声を流すのが主流
+    /// ここで指定されていなければ、
+    /// previewと名前が付いた音声ファイルを流すのが主流
     pub preview: Option<&'a str>,
     /// あまり使われないコマンド
     pub uncommon: UncommonHeader<'a>,
@@ -566,36 +566,78 @@ pub struct Bms<'a> {
 }
 
 /// 一小節ごとのメインデータ
+///
+/// 同じ小節、同じチャンネルが複数行定義された場合に対応
+///
+/// bgmとoptionのみ複数行に対応している場合が多い
 #[derive(Debug, PartialEq)]
 pub struct MainData<'a> {
+    /// BGM
     pub bgm: Vec<Vec<usize>>,
+    /// 一小節の長さ
+    ///
+    /// 1が基準
     pub length: f64,
+    /// BPM
+    ///
+    /// 1から255まで
     pub bpm: Vec<&'a [Option<f64>]>,
+    /// BGA
     pub bga: Vec<Vec<usize>>,
+    /// POOR BGA
     pub bga_poor: Vec<Vec<usize>>,
+    /// BGA LAYER
     pub bga_layer: Vec<Vec<usize>>,
+    /// EXBPM
     pub ex_bpm: Vec<Vec<usize>>,
+    /// 停止
     pub stop: Vec<Vec<usize>>,
+    /// BGA LAYER2
     pub bga_layer2: Vec<Vec<usize>>,
+    /// BGA不透明度
     pub bga_alpha: Vec<&'a [u8]>,
+    /// BGA LAYER不透明度
     pub bga_layer_alpha: Vec<&'a [u8]>,
+    /// BGA LAYER2不透明度
     pub bga_layer2_alpha: Vec<&'a [u8]>,
+    /// POOR BGA不透明度
     pub bga_poor_alpha: Vec<&'a [u8]>,
-    pub note: HashMap<usize, Vec<Vec<usize>>>,
-    pub invisible_note: HashMap<usize, Vec<Vec<usize>>>,
-    pub long_note: HashMap<usize, Vec<Vec<usize>>>,
+    /// ノーツ
+    ///
+    /// チャンネルを36進数で解釈した値をキーにした`HashMap`
+    pub notes: HashMap<usize, Vec<Vec<usize>>>,
+    /// 不可視ノーツ
+    ///
+    /// チャンネルを36進数で解釈した値をキーにした`HashMap`
+    pub invisible_notes: HashMap<usize, Vec<Vec<usize>>>,
+    /// ロングノーツ
+    ///
+    /// チャンネルを36進数で解釈した値をキーにした`HashMap`
+    pub long_notes: HashMap<usize, Vec<Vec<usize>>>,
+    /// テキスト
     pub text: Vec<Vec<usize>>,
+    /// EXRANK
     pub ex_rank: Vec<Vec<usize>>,
+    /// BGA aRGB
     pub bga_argb: Vec<Vec<usize>>,
+    /// BGA LAYER aRGB
     pub bga_layer_argb: Vec<Vec<usize>>,
+    /// BGA LAYER2 aRGB
     pub bga_layer2_argb: Vec<Vec<usize>>,
+    /// POOR BGA aRGB
     pub bga_poor_argb: Vec<Vec<usize>>,
+    /// SWBGA
     pub switch_bga: Vec<Vec<usize>>,
+    /// オプション
     pub option: Vec<Vec<usize>>,
+    /// 地雷
     pub landmine: HashMap<usize, Vec<&'a [f64]>>,
+    /// スクロール速度
     pub scroll: Vec<Vec<usize>>,
+    /// ノーツ速度
     pub speed: Vec<Vec<usize>>,
 
+    /// その他
     pub other: Vec<(usize, &'a str)>,
 }
 impl Default for MainData<'_> {
@@ -614,9 +656,9 @@ impl Default for MainData<'_> {
             bga_layer_alpha: vec![],
             bga_layer2_alpha: vec![],
             bga_poor_alpha: vec![],
-            note: HashMap::new(),
-            invisible_note: HashMap::new(),
-            long_note: HashMap::new(),
+            notes: HashMap::new(),
+            invisible_notes: HashMap::new(),
+            long_notes: HashMap::new(),
             text: vec![],
             ex_rank: vec![],
             bga_argb: vec![],
