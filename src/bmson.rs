@@ -12,13 +12,13 @@ impl Bmson {
         serde_json::from_str(source)
     }
     /// BmsonからJson形式の文字列に変換
-    pub fn to_json_string(&self) -> serde_json::Result<String> {
+    pub fn to_string(&self) -> serde_json::Result<String> {
         serde_json::to_string(self)
     }
     /// BmsonからJson形式の文字列に変換
     ///
     /// 改行やインデントが適切にされている
-    pub fn to_json_string_pretty(&self) -> serde_json::Result<String> {
+    pub fn to_string_pretty(&self) -> serde_json::Result<String> {
         serde_json::to_string_pretty(self)
     }
 }

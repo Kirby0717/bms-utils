@@ -164,7 +164,7 @@ impl BmsSwitchBlock {
 
 use std::collections::{HashMap, HashSet};
 impl RawBms {
-    pub fn new(source: &str) -> RawBms {
+    pub fn parse(source: &str) -> RawBms {
         use token::*;
         use winnow::prelude::*;
         let token_stream = lex::lex(source);
@@ -185,23 +185,6 @@ impl RawBms {
                 .unwrap(),
             all_wav_files,
         }
-    }
-    pub fn new_with_stack(source: &str, stack_size: usize) -> RawBms {
-        let source = source.to_string();
-        std::thread::Builder::new()
-            .stack_size(stack_size)
-            .spawn(move || RawBms::new(&source))
-            .unwrap()
-            .join()
-            .unwrap()
-    }
-    pub fn drop_with_stack(self, stack_size: usize) {
-        std::thread::Builder::new()
-            .stack_size(stack_size)
-            .spawn(move || drop(self))
-            .unwrap()
-            .join()
-            .unwrap();
     }
     pub fn all_wav_files(&self) -> &HashSet<String> {
         &self.all_wav_files
