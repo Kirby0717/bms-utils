@@ -64,6 +64,9 @@ pub mod bms;
 pub use bms::Bms;
 pub use bms::RawBms;
 
+/// 新しいやつ
+pub mod new_bms;
+
 /// 拡張子がbmsonのファイル
 ///
 /// 参考URL
