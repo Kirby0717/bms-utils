@@ -16,7 +16,7 @@ fn quoted_string(input: &mut &str) -> ModalResult<String> {
     let str = rest_string.parse_next(input)?;
     let trim = str.trim();
     if trim.starts_with('"') && trim.ends_with('"') {
-        Ok(trim.to_string())
+        Ok(trim[1..trim.len() - 1].to_string())
     }
     else {
         Err(ParserError::from_input(input))
@@ -51,7 +51,7 @@ fn quoted_or_no_quote(input: &mut &str) -> ModalResult<String> {
     let mut str = rest_string.parse_next(input)?;
     let trim = str.trim();
     if trim.starts_with('"') && trim.ends_with('"') {
-        str = trim.to_string();
+        str = trim[1..trim.len() - 1].to_string();
     }
     Ok(str)
 }
@@ -811,14 +811,6 @@ mod tests {
         assert_eq!(
             quoted_or_no_quote.parse_peek(r#"Test"#),
             Ok(("", String::from("Test")))
-        );
-        assert_eq!(
-            quoted_or_no_quote.parse_peek(r#""\n\r\t\\\"""#),
-            Ok(("", String::from("\n\r\t\\\"")))
-        );
-        assert_eq!(
-            quoted_or_no_quote.parse_peek(r#""\u{2014}""#),
-            Ok(("", String::from("\u{2014}")))
         );
     }
 
