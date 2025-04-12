@@ -11,9 +11,17 @@ use winnow::{
     stream::AsChar,
     token::{any, rest, take_while},
 };
-mod string;
-use string::escaped_string;
 
+fn quoted_string(input: &mut &str) -> ModalResult<String> {
+    let str = rest_string.parse_next(input)?;
+    let trim = str.trim();
+    if trim.starts_with('"') && trim.ends_with('"') {
+        Ok(trim.to_string())
+    }
+    else {
+        Err(ParserError::from_input(input))
+    }
+}
 fn rest_string(input: &mut &str) -> ModalResult<String> {
     rest.map(|s: &str| s.to_string()).parse_next(input)
 }
@@ -40,7 +48,12 @@ fn padded_uint<N: std::str::FromStr + std::default::Default>(
         .parse_next(input)
 }
 fn quoted_or_no_quote(input: &mut &str) -> ModalResult<String> {
-    alt((preceded(space0, escaped_string), rest_string)).parse_next(input)
+    let mut str = rest_string.parse_next(input)?;
+    let trim = str.trim();
+    if trim.starts_with('"') && trim.ends_with('"') {
+        str = trim.to_string();
+    }
+    Ok(str)
 }
 
 pub(crate) fn lex(input: &str) -> Vec<Token> {
@@ -96,8 +109,7 @@ fn sharp_command(input: &mut &str) -> ModalResult<Token> {
         maker,
         genre,
         comment,
-        text,
-        song,
+        text_song,
         path_wav,
         bpm,
         ex_bpm,
@@ -182,6 +194,7 @@ fn main_data(input: &mut &str) -> ModalResult<Token> {
     const BGA_POOR: usize = base36("06");
     const BGA_LAYER: usize = base36("07");
     const EX_BPM: usize = base36("08");
+    const STOP: usize = base36("09");
     const BGA_LAYER2: usize = base36("0A");
     const BGA_ALPHA: usize = base36("0B");
     const BGA_LAYER_ALPHA: usize = base36("0C");
@@ -194,11 +207,13 @@ fn main_data(input: &mut &str) -> ModalResult<Token> {
     const LONG_NOTE_S: usize = base36("51");
     const LONG_NOTE_E: usize = base36("6Z");
     const TEXT: usize = base36("99");
+    const EXRANK: usize = base36("A0");
     const BGA_ARGB: usize = base36("A1");
     const BGA_LAYER_ARGB: usize = base36("A2");
     const BGA_LAYER2_ARGB: usize = base36("A3");
     const BGA_POOR_ARGB: usize = base36("A4");
     const SWITCH_BGA: usize = base36("A5");
+    const OPTION: usize = base36("A6");
     const LANDMINE_S: usize = base36("D1");
     const LANDMINE_E: usize = base36("E9");
     const SCROLL: usize = base36("SC");
@@ -227,23 +242,29 @@ fn main_data(input: &mut &str) -> ModalResult<Token> {
             .map(|n| if n == 0 { None } else { Some(n as f64) })
             .collect()),
         EX_BPM => ExBpm(ch_vec.parse_next(input)?),
+        STOP => Stop(ch_vec.parse_next(input)?),
         NOTE_S..=NOTE_E => Note(ch, ch_vec.parse_next(input)?),
         INVISIBLE_NOTE_S..=INVISIBLE_NOTE_E => {
             InvisibleNote(ch, ch_vec.parse_next(input)?)
         }
         LONG_NOTE_S..=LONG_NOTE_E => LongNote(ch, ch_vec.parse_next(input)?),
         TEXT => Text(ch_vec.parse_next(input)?),
+        EXRANK => ExRank(ch_vec.parse_next(input)?),
+        OPTION => Option(ch_vec.parse_next(input)?),
         LANDMINE_S..=LANDMINE_E => Landmine(
             ch,
             repeat(
                 0..,
-                preceded(space0, channel.map(|ch| ch.to_base_36() as f64 / 2.0)),
+                preceded(
+                    space0,
+                    channel.map(|ch| ch.to_base_36() as f64 / 2.0),
+                ),
             )
             .parse_next(input)?,
         ),
         SCROLL => Scroll(ch_vec.parse_next(input)?),
         SPEED => Speed(ch_vec.parse_next(input)?),
-        _ => Other(ch, rest_string.parse_next(input)?)
+        _ => Other(ch, rest_string.parse_next(input)?),
     };
     Ok(Token::Command(MainData(n, data)))
 }
@@ -343,13 +364,13 @@ fn comment(input: &mut &str) -> ModalResult<Token> {
         .parse_next(input)?;
     Ok(Token::Command(Comment(s)))
 }
-fn text(input: &mut &str) -> ModalResult<Token> {
-    let (_, ch, _, s) = (Caseless("TEXT"), channel, space1, escaped_string)
-        .parse_next(input)?;
-    Ok(Token::Command(Text(ch, s)))
-}
-fn song(input: &mut &str) -> ModalResult<Token> {
-    let (_, ch, _, s) = (Caseless("SONG"), channel, space1, escaped_string)
+fn text_song(input: &mut &str) -> ModalResult<Token> {
+    let (_, ch, _, s) = (
+        alt((Caseless("TEXT"), Caseless("SONG"))),
+        channel,
+        space1,
+        quoted_string,
+    )
         .parse_next(input)?;
     Ok(Token::Command(Text(ch, s)))
 }
@@ -730,7 +751,7 @@ fn skip(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::ControlFlow(Skip))
 }
 fn default(input: &mut &str) -> ModalResult<Token> {
-    let _ = Caseless("DEFAULT").parse_next(input)?;
+    let _ = alt((Caseless("DEFAULT"), Caseless("DEF"))).parse_next(input)?;
     Ok(Token::ControlFlow(Default))
 }
 fn other(input: &mut &str) -> ModalResult<Token> {
