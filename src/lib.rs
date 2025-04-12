@@ -41,6 +41,8 @@
 //! ```
 //! # Bmsonファイル
 //! ```
+//! // 読み込み
+//!
 //! let bmson_string = r#"
 //! {
 //!   "version": "1.0.0",
@@ -56,8 +58,8 @@
 //!     "init_bpm": 200.0,
 //!     "judge_rank": 100.0,
 //!     "total": 400.0,
-//!     "back_image": 背景画像.bmp,
-//!     "eyecatch_image": アイキャッチ画像.bmp,
+//!     "back_image": "背景画像.bmp",
+//!     "eyecatch_image": "アイキャッチ画像.bmp",
 //!     "title_image": "タイトル画像.bmp",
 //!     "banner_image": "バナー画像.bmp",
 //!     "preview_music": "preview.wav",
@@ -72,14 +74,9 @@
 //!     "bga_events": [],
 //!     "layer_events": [],
 //!     "poor_events": []
-//!   },
-//!   "scroll_events": [],
-//!   "mine_channels": [],
-//!   "key_channels": []
+//!   }
 //! }
 //! "#;
-//! // 読み込み
-//!
 //! let bmson = bms_utils::Bmson::parse(bmson_string).unwrap();
 //!
 //! // 書き込み
