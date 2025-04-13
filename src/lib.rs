@@ -105,5 +105,7 @@ pub use bms::RawBms;
 /// 参考URL
 /// * <https://bmson-spec.readthedocs.io/en/master/doc/index.html>
 /// * <https://github.com/exch-bms2/beatoraja/wiki/楽曲製作者向け資料>
+#[cfg(feature = "bmson")]
 pub mod bmson;
+#[cfg(feature = "bmson")]
 pub use bmson::Bmson;

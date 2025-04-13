@@ -1,10 +1,8 @@
-#![allow(dead_code)]
-
 use super::token::*;
 use Command::*;
 use ControlFlow::*;
 use winnow::{
-    ascii::{Caseless, alphanumeric1, dec_int, dec_uint, digit1, float},
+    ascii::{Caseless, alphanumeric1, digit1, float},
     combinator::{alt, dispatch, empty, opt, preceded, repeat, separated},
     error::ParserError,
     prelude::*,
@@ -40,11 +38,15 @@ fn channel(input: &mut &str) -> ModalResult<Channel> {
         //winnow::ascii::alphanumeric1.parse_next(input)?
     ))
 }
-fn padded_uint<N: std::str::FromStr + std::default::Default>(
-    input: &mut &str,
-) -> ModalResult<N> {
+fn int<N: num_traits::Num>(input: &mut &str) -> ModalResult<N> {
+    (opt("-"), digit1)
+        .take()
+        .map(|s: &str| N::from_str_radix(s, 10).unwrap_or(N::zero()))
+        .parse_next(input)
+}
+fn uint<N: num_traits::Num>(input: &mut &str) -> ModalResult<N> {
     digit1
-        .map(|s: &str| N::from_str(s).unwrap_or_default())
+        .map(|s: &str| N::from_str_radix(s, 10).unwrap_or(N::zero()))
         .parse_next(input)
 }
 fn quoted_or_no_quote(input: &mut &str) -> ModalResult<String> {
@@ -272,13 +274,13 @@ fn player(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) = (
         Caseless("PLAYER"),
         space1,
-        dec_int.verify(|n| (1..=4).contains(n)),
+        int.verify(|n| (1..=4).contains(n)),
     )
         .parse_next(input)?;
     Ok(Token::Command(Player(n)))
 }
 fn rank(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("RANK"), space1, dec_int).parse_next(input)?;
+    let (_, _, n) = (Caseless("RANK"), space1, int).parse_next(input)?;
     Ok(Token::Command(Rank(n)))
 }
 fn def_ex_rank(input: &mut &str) -> ModalResult<Token> {
@@ -321,12 +323,12 @@ fn character_file(input: &mut &str) -> ModalResult<Token> {
 }
 fn play_level(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) =
-        (Caseless("PLAYLEVEL"), space1, dec_int).parse_next(input)?;
+        (Caseless("PLAYLEVEL"), space1, int).parse_next(input)?;
     Ok(Token::Command(PlayLevel(n)))
 }
 fn difficulty(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) =
-        (Caseless("DIFFICULTY"), space1, dec_int).parse_next(input)?;
+        (Caseless("DIFFICULTY"), space1, int).parse_next(input)?;
     Ok(Token::Command(Difficulty(n)))
 }
 fn title(input: &mut &str) -> ModalResult<Token> {
@@ -406,9 +408,9 @@ fn stp(input: &mut &str) -> ModalResult<Token> {
     let (_, _, x, _, y, _, z) = (
         Caseless("STP"),
         space1,
-        padded_uint,
+        uint,
         ".",
-        padded_uint.verify(|&n| n < 1000),
+        uint.verify(|&n| n < 1000),
         space1,
         float,
     )
@@ -419,7 +421,7 @@ fn ln_mode(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) = (
         Caseless("LNMODE"),
         space1,
-        dec_int.verify(|n| (1..=3).contains(n)),
+        int.verify(|n| (1..=3).contains(n)),
     )
         .parse_next(input)?;
     Ok(Token::Command(LnMode(n)))
@@ -428,7 +430,7 @@ fn ln_type(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) = (
         Caseless("LNTYPE"),
         space1,
-        dec_int.verify(|n| (1..=2).contains(n)),
+        int.verify(|n| (1..=2).contains(n)),
     )
         .parse_next(input)?;
     Ok(Token::Command(LnType(n)))
@@ -473,7 +475,7 @@ fn wav_command(input: &mut &str) -> ModalResult<Token> {
     let (_, _, id, _, ch, _, val) = (
         Caseless("WAVCMD"),
         space1,
-        padded_uint.verify(|&id: &i32| id <= 2),
+        uint.verify(|&id: &i32| id <= 2),
         space1,
         channel,
         space1,
@@ -525,7 +527,7 @@ fn ex_wav(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::Command(ExWav(ch, option, name)))
 }
 fn cdda(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("CDDA"), space1, dec_uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("CDDA"), space1, uint).parse_next(input)?;
     Ok(Token::Command(Cdda(n)))
 }
 fn midi_file(input: &mut &str) -> ModalResult<Token> {
@@ -543,7 +545,7 @@ fn ex_bmp(input: &mut &str) -> ModalResult<Token> {
         Caseless("EXBMP"),
         channel,
         space1,
-        separated(4, dec_uint.map(|n: u8| n), (space0, ",", space0)),
+        separated(4, uint.map(|n: u8| n), (space0, ",", space0)),
         one_of_space,
         rest_string,
     )
@@ -576,7 +578,7 @@ fn poor_bga(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) = (
         Caseless("POORBGA"),
         space1,
-        dec_int.verify(|n| (0..=2).contains(n)),
+        int.verify(|n| (0..=2).contains(n)),
     )
         .parse_next(input)?;
     Ok(Token::Command(PoorBga(n)))
@@ -592,9 +594,9 @@ fn switch_bga(input: &mut &str) -> ModalResult<Token> {
         (space0, ":", space0),
         channel,
         (space0, ":", space0),
-        dec_uint.map(|n: u32| n != 0),
+        uint.map(|n: u32| n != 0),
         (space0, ":", space0),
-        separated(4, dec_uint.map(|n: u8| n), (space0, ",", space0))
+        separated(4, uint.map(|n: u8| n), (space0, ",", space0))
             .map(|v: Vec<u8>| v.try_into().unwrap()),
         space1,
         repeat(1.., channel),
@@ -609,7 +611,7 @@ fn argb(input: &mut &str) -> ModalResult<Token> {
         Caseless("ARGB"),
         channel,
         space1,
-        separated(4, dec_uint.map(|n: u8| n), (space0, ",", space0))
+        separated(4, uint.map(|n: u8| n), (space0, ",", space0))
             .map(|v: Vec<u8>| v.try_into().unwrap()),
     )
         .parse_next(input)?;
@@ -626,12 +628,12 @@ fn video_fps(input: &mut &str) -> ModalResult<Token> {
 }
 fn video_colors(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) =
-        (Caseless("VIDEOCOLORS"), space1, dec_uint).parse_next(input)?;
+        (Caseless("VIDEOCOLORS"), space1, uint).parse_next(input)?;
     Ok(Token::Command(VideoColors(n)))
 }
 fn video_delay(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) =
-        (Caseless("VIDEODELAY"), space1, dec_uint).parse_next(input)?;
+        (Caseless("VIDEODELAY"), space1, uint).parse_next(input)?;
     Ok(Token::Command(VideoDelay(n)))
 }
 fn movie(input: &mut &str) -> ModalResult<Token> {
@@ -648,9 +650,9 @@ fn ex_character(input: &mut &str) -> ModalResult<Token> {
     let (_, _, spri_n, _, bmp_n, _, trim) = (
         Caseless("ExtChr"),
         space1,
-        dec_uint.verify(|&n| n < 1024),
+        uint.verify(|&n| n < 1024),
         space1,
-        dec_uint.verify(|&n| n < 256),
+        uint.verify(|&n| n < 256),
         space1,
         separated(4, float.map(|f: f64| f), space1).map(|v: Vec<f64>| v),
     )
@@ -696,17 +698,17 @@ fn preview(input: &mut &str) -> ModalResult<Token> {
 }
 fn base62(input: &mut &str) -> ModalResult<Token> {
     let (_, _, _): (_, _, i32) =
-        (Caseless("BASE"), space1, dec_int.verify(|&n| n == 62))
+        (Caseless("BASE"), space1, int.verify(|&n| n == 62))
             .parse_next(input)?;
     Ok(Token::Command(Base62))
 }
 fn random(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("RANDOM"), space1, dec_uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("RANDOM"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(Random(n)))
 }
 fn set_random(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) =
-        (Caseless("SETRANDOM"), space1, dec_uint).parse_next(input)?;
+        (Caseless("SETRANDOM"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(SetRandom(n)))
 }
 fn end_random(input: &mut &str) -> ModalResult<Token> {
@@ -714,11 +716,11 @@ fn end_random(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::ControlFlow(EndRandom))
 }
 fn r#if(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("IF"), space1, dec_uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("IF"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(If(n)))
 }
 fn else_if(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("ELSEIF"), space1, dec_uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("ELSEIF"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(ElseIf(n)))
 }
 fn r#else(input: &mut &str) -> ModalResult<Token> {
@@ -730,12 +732,12 @@ fn end_if(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::ControlFlow(EndIf))
 }
 fn switch(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("SWITCH"), space1, dec_uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("SWITCH"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(Switch(n)))
 }
 fn set_switch(input: &mut &str) -> ModalResult<Token> {
     let (_, _, n) =
-        (Caseless("SETSWITCH"), space1, dec_uint).parse_next(input)?;
+        (Caseless("SETSWITCH"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(SetSwitch(n)))
 }
 fn end_switch(input: &mut &str) -> ModalResult<Token> {
@@ -743,7 +745,7 @@ fn end_switch(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::ControlFlow(EndSwitch))
 }
 fn case(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) = (Caseless("CASE"), space1, dec_uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("CASE"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(Case(n)))
 }
 fn skip(input: &mut &str) -> ModalResult<Token> {
