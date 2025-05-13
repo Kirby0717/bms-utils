@@ -322,13 +322,11 @@ fn character_file(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::Command(CharacterFile(s)))
 }
 fn play_level(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) =
-        (Caseless("PLAYLEVEL"), space1, int).parse_next(input)?;
+    let (_, _, n) = (Caseless("PLAYLEVEL"), space1, int).parse_next(input)?;
     Ok(Token::Command(PlayLevel(n)))
 }
 fn difficulty(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) =
-        (Caseless("DIFFICULTY"), space1, int).parse_next(input)?;
+    let (_, _, n) = (Caseless("DIFFICULTY"), space1, int).parse_next(input)?;
     Ok(Token::Command(Difficulty(n)))
 }
 fn title(input: &mut &str) -> ModalResult<Token> {
@@ -444,27 +442,15 @@ fn oct_fp(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::Command(OctFp))
 }
 fn option(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, name, _, option) = (
-        Caseless("OPTION"),
-        space1,
-        take_while(0.., |c: char| c != ':'),
-        ":",
-        rest_string,
-    )
-        .parse_next(input)?;
-    Ok(Token::Command(Option(name.to_string(), option)))
+    let (_, _, option) =
+        (Caseless("OPTION"), space1, rest_string).parse_next(input)?;
+    Ok(Token::Command(Option(option)))
 }
 fn change_option(input: &mut &str) -> ModalResult<Token> {
-    let (_, ch, _, name, _, option) = (
-        Caseless("CHANGEOPTION"),
-        channel,
-        space1,
-        take_while(0.., |c: char| c != ':'),
-        ":",
-        rest_string,
-    )
-        .parse_next(input)?;
-    Ok(Token::Command(ChangeOption(ch, name.to_string(), option)))
+    let (_, ch, _, option) =
+        (Caseless("CHANGEOPTION"), channel, space1, rest_string)
+            .parse_next(input)?;
+    Ok(Token::Command(ChangeOption(ch, option)))
 }
 fn wav(input: &mut &str) -> ModalResult<Token> {
     let (_, ch, _, s) =
@@ -632,8 +618,7 @@ fn video_colors(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::Command(VideoColors(n)))
 }
 fn video_delay(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) =
-        (Caseless("VIDEODELAY"), space1, uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("VIDEODELAY"), space1, uint).parse_next(input)?;
     Ok(Token::Command(VideoDelay(n)))
 }
 fn movie(input: &mut &str) -> ModalResult<Token> {
@@ -707,8 +692,7 @@ fn random(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::ControlFlow(Random(n)))
 }
 fn set_random(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) =
-        (Caseless("SETRANDOM"), space1, uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("SETRANDOM"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(SetRandom(n)))
 }
 fn end_random(input: &mut &str) -> ModalResult<Token> {
@@ -736,8 +720,7 @@ fn switch(input: &mut &str) -> ModalResult<Token> {
     Ok(Token::ControlFlow(Switch(n)))
 }
 fn set_switch(input: &mut &str) -> ModalResult<Token> {
-    let (_, _, n) =
-        (Caseless("SETSWITCH"), space1, uint).parse_next(input)?;
+    let (_, _, n) = (Caseless("SETSWITCH"), space1, uint).parse_next(input)?;
     Ok(Token::ControlFlow(SetSwitch(n)))
 }
 fn end_switch(input: &mut &str) -> ModalResult<Token> {

@@ -16,10 +16,9 @@ bmson = ["dep:serde", "dep:serde_json", "dep:serde_repr"]
 [dependencies]
 log = "0.4"
 num-traits = "0.2"
-ordered-float = "5"
 rand = "0.9"
-#small_vec = "0.1"
 winnow = "0.7"
+#call-recursion = "0.1"
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 serde_repr = { version = "0.1", optional = true }
