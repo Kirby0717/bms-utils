@@ -41,12 +41,12 @@ fn channel(input: &mut &str) -> ModalResult<Channel> {
 fn int<N: num_traits::Num>(input: &mut &str) -> ModalResult<N> {
     (opt("-"), digit1)
         .take()
-        .map(|s: &str| N::from_str_radix(s, 10).unwrap_or(N::zero()))
+        .verify_map(|s: &str| N::from_str_radix(s, 10).ok())
         .parse_next(input)
 }
 fn uint<N: num_traits::Num>(input: &mut &str) -> ModalResult<N> {
     digit1
-        .map(|s: &str| N::from_str_radix(s, 10).unwrap_or(N::zero()))
+        .verify_map(|s: &str| N::from_str_radix(s, 10).ok())
         .parse_next(input)
 }
 fn quoted_or_no_quote(input: &mut &str) -> ModalResult<String> {
@@ -1181,20 +1181,14 @@ mod tests {
             command.parse_peek("#option GameName:OptionStr"),
             Ok((
                 "",
-                Token::Command(Option(
-                    String::from("GameName"),
-                    String::from("OptionStr")
-                ))
+                Token::Command(Option(String::from("GameName:OptionStr")))
             ))
         );
         assert_eq!(
             command.parse_peek("#OPTION 774:HI-SPEED_x99.75"),
             Ok((
                 "",
-                Token::Command(Option(
-                    String::from("774"),
-                    String::from("HI-SPEED_x99.75")
-                ))
+                Token::Command(Option(String::from("774:HI-SPEED_x99.75")))
             ))
         );
         // CHANGEOPTION
@@ -1204,8 +1198,7 @@ mod tests {
                 "",
                 Token::Command(ChangeOption(
                     Channel::from("01"),
-                    String::from("charatbeatHDX"),
-                    String::from("LONGMODE 0")
+                    String::from("charatbeatHDX:LONGMODE 0")
                 ))
             ))
         );
@@ -1215,8 +1208,7 @@ mod tests {
                 "",
                 Token::Command(ChangeOption(
                     Channel::from("zz"),
-                    String::from("774"),
-                    String::from("RANDOM_MIRROR")
+                    String::from("774:RANDOM_MIRROR")
                 ))
             ))
         );
