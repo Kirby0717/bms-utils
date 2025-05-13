@@ -24,7 +24,7 @@ impl Bmson {
 }
 
 /// Bmson本体
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq)]
 pub struct Bmson {
     /// Bmsonのバージョン
     pub version: String,
@@ -41,10 +41,13 @@ pub struct Bmson {
     /// BGA情報
     pub bga: Bga,
     /// スクロール速度イベント（beatoraja拡張）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub scroll_events: Option<Vec<ScrollEvent>>,
     /// 地雷チャンネル（beatoraja拡張）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mine_channels: Option<Vec<MineChannel>>,
     /// 不可視ノートチャンネル（beatoraja拡張）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub key_channels: Option<Vec<KeyChannel>>,
 }
 
@@ -107,6 +110,7 @@ pub struct BmsonInfo {
     #[serde(default = "default_resolution")]
     pub resolution: u32,
     /// ロングノートの種類（beatoraja拡張）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ln_type: Option<LongNoteType>,
 }
 fn default_mode_hint() -> String {
@@ -120,6 +124,30 @@ fn default_total() -> f64 {
 }
 fn default_resolution() -> u32 {
     240
+}
+impl Default for BmsonInfo {
+    fn default() -> Self {
+        BmsonInfo {
+            title: String::new(),
+            subtitle: String::new(),
+            artist: String::new(),
+            subartists: None,
+            genre: String::new(),
+            mode_hint: "beat-7k".to_string(),
+            chart_name: String::new(),
+            level: 0,
+            init_bpm: 180.,
+            judge_rank: 100.,
+            total: 100.,
+            back_image: None,
+            eyecatch_image: None,
+            title_image: None,
+            banner_image: None,
+            preview_music: None,
+            resolution: 240,
+            ln_type: None,
+        }
+    }
 }
 
 /// 小節線イベント
@@ -156,10 +184,12 @@ pub struct Note {
     /// trueでそのまま、falseで音声の最初へもどす
     pub c: bool,
     /// ロングノートの種類（beatoraja拡張）
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub t: Option<LongNoteType>,
     /// 終端フラグ（beatoraja拡張）
     ///
     /// trueでかつロングノートの終点に配置される場合、終端音として鳴らす
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub up: Option<bool>,
 }
 
@@ -182,7 +212,7 @@ pub struct StopEvent {
 }
 
 /// BGAデータ
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[derive(Deserialize, Serialize, Clone, Default, Debug, PartialEq)]
 pub struct Bga {
     /// 画像データ
     pub bga_header: Vec<BgaHeader>,

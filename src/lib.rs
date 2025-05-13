@@ -4,6 +4,8 @@
 //!
 //! # 拡張子がbms,bme,bml,pmsのファイル
 //! ```
+//! # let rng = rand::rngs::StdRng::from_rng(&mut rand::rng());
+//! # use rand::SeedableRng;
 //! // 読み込み
 //!
 //! let bms_str = r"
@@ -17,9 +19,9 @@
 //!
 //! #SUBTITLE サブタイトル
 //! #SUBARTIST サブ制作者
-//! #STAGEFILE ステージ画像
-//! #BANNER バナー画像
-//! #BACKBMP タイトル文字画像
+//! #STAGEFILE ステージ画像.bmp
+//! #BANNER バナー画像.bmp
+//! #BACKBMP タイトル文字画像.bmp
 //!
 //! #DIFFICULTY 4
 //! #TOTAL 400
@@ -28,7 +30,7 @@
 //! #LNMODE 2
 //! ";
 //! // ランダム要素を確定していない状態のBMSを作成
-//! let rawbms = RawBms::parse(bms_str);
+//! let rawbms = bms_utils::RawBms::parse(bms_str);
 //! // ランダム要素を確定させる
 //! // この時、疑似乱数生成器を渡す
 //! let bms = rawbms.make_bms(rng);
@@ -41,7 +43,41 @@
 //! ```
 //! // 読み込み
 //!
-//! let bmson = Bmson::parse(&bmson_string).unwrap();
+//! let bmson_string = r#"
+//! {
+//!   "version": "1.0.0",
+//!   "info": {
+//!     "title": "タイトル",
+//!     "subtitle": "サブタイトル",
+//!     "artist": "制作者",
+//!     "subartists": [],
+//!     "genre": "ジャンル",
+//!     "mode_hint": "beat-7k",
+//!     "chart_name": "ANOTHER",
+//!     "level": 12,
+//!     "init_bpm": 200.0,
+//!     "judge_rank": 100.0,
+//!     "total": 400.0,
+//!     "back_image": "背景画像.bmp",
+//!     "eyecatch_image": "アイキャッチ画像.bmp",
+//!     "title_image": "タイトル画像.bmp",
+//!     "banner_image": "バナー画像.bmp",
+//!     "preview_music": "preview.wav",
+//!     "resolution": 240
+//!   },
+//!   "lines": [],
+//!   "bpm_events": [],
+//!   "stop_events": [],
+//!   "sound_channels": [],
+//!   "bga": {
+//!     "bga_header": [],
+//!     "bga_events": [],
+//!     "layer_events": [],
+//!     "poor_events": []
+//!   }
+//! }
+//! "#;
+//! let bmson = bms_utils::Bmson::parse(bmson_string).unwrap();
 //!
 //! // 書き込み
 //!
@@ -69,5 +105,7 @@ pub use bms::RawBms;
 /// 参考URL
 /// * <https://bmson-spec.readthedocs.io/en/master/doc/index.html>
 /// * <https://github.com/exch-bms2/beatoraja/wiki/楽曲製作者向け資料>
+#[cfg(feature = "bmson")]
 pub mod bmson;
+#[cfg(feature = "bmson")]
 pub use bmson::Bmson;

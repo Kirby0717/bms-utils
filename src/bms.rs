@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 pub(crate) mod lex;
 pub(crate) mod parse;
 pub(crate) mod token;
@@ -189,6 +188,7 @@ impl RawBms {
     pub fn all_wav_files(&self) -> &HashSet<String> {
         &self.all_wav_files
     }
+    #[allow(deprecated)]
     pub fn make_bms(&self, mut rng: impl rand::RngCore) -> Bms {
         use token::Command::*;
         let mut commands = vec![];
@@ -277,7 +277,7 @@ impl RawBms {
                     };
                 }
                 Player(n) => {
-                    bms.deprecated.player = Some(match n {
+                    bms.player = Some(match n {
                         1 => PlayType::SinglePlay,
                         2 => PlayType::CouplePlay,
                         3 => PlayType::DoublePlay,
@@ -288,107 +288,100 @@ impl RawBms {
                 Rank(n) => bms.rank = Some(*n),
                 DefExRank(n) => bms.def_ex_rank = Some(*n),
                 ExRank(ch, n) => {
-                    bms.uncommon
-                        .ex_rank
-                        .insert(ch.to_base_36_or_62(base62), *n);
+                    bms.ex_rank.insert(ch.to_base_36_or_62(base62), *n);
                 }
                 Total(n) => bms.total = Some(*n),
                 VolumeWav(n) => bms.volume_wav = Some(*n),
                 StageFile(s) => bms.stage_file = Some(s),
                 Banner(s) => bms.banner = Some(s),
                 BackBmp(s) => bms.back_bmp = Some(s),
-                CharacterFile(s) => bms.uncommon.character_file = Some(s),
+                CharacterFile(s) => bms.character_file = Some(s),
                 PlayLevel(n) => bms.play_level = Some(*n),
                 Difficulty(n) => bms.difficulty = Some(*n),
                 Title(s) => bms.title = Some(s),
                 SubTitle(s) => bms.sub_title.push(s),
                 Artist(s) => bms.artist = Some(s),
                 SubArtist(s) => bms.sub_artist.push(s),
-                Maker(s) => bms.uncommon.maker = Some(s),
+                Maker(s) => bms.maker = Some(s),
                 Genre(s) => bms.genre = Some(s),
-                Comment(s) => bms.uncommon.comment.push(s),
+                Comment(s) => bms.comment.push(s),
                 Text(ch, s) => {
-                    bms.uncommon.text.insert(ch.to_base_36_or_62(base62), s);
+                    bms.text.insert(ch.to_base_36_or_62(base62), s);
                 }
-                PathWav(s) => bms.uncommon.path_wav = Some(s),
+                PathWav(s) => bms.path_wav = Some(s),
                 Bpm(n) => bms.bpm = Some(*n),
                 ExBpm(ch, n) => {
                     bms.ex_bpm.insert(ch.to_base_36_or_62(base62), *n);
                 }
-                BaseBpm(n) => bms.deprecated.base_bpm = Some(*n),
+                BaseBpm(n) => bms.base_bpm = Some(*n),
                 Stop(ch, n) => {
                     bms.stop.insert(ch.to_base_36_or_62(base62), *n);
                 }
-                Stp(x, y, z) => bms.uncommon.stp.push((*x, *y, *z)),
+                Stp(x, y, z) => bms.stp.push((*x, *y, *z)),
                 LnMode(n) => bms.ln_mode = Some(*n),
                 LnType(n) => bms.ln_type = Some(*n),
                 LnObject(ch) => {
                     bms.ln_object.insert(ch.to_base_36_or_62(base62));
                 }
-                OctFp => bms.uncommon.oct_fp = true,
-                Option(name, opt) => bms.uncommon.option.push((name, opt)),
-                ChangeOption(ch, name, opt) => {
-                    bms.uncommon
-                        .change_option
-                        .insert(ch.to_base_36_or_62(base62), (name, opt));
+                OctFp => bms.oct_fp = true,
+                Option(opt) => bms.option.push(opt),
+                ChangeOption(ch, opt) => {
+                    bms.change_option
+                        .insert(ch.to_base_36_or_62(base62), opt);
                 }
                 Wav(ch, s) => {
                     bms.wav.insert(ch.to_base_36_or_62(base62), s);
                 }
                 WavCommand(opt, ch, v) => {
-                    bms.uncommon.wav_command.push((
+                    bms.wav_command.push((
                         *opt,
                         ch.to_base_36_or_62(base62),
                         *v,
                     ));
                 }
                 ExWav(ch, opt, s) => {
-                    bms.uncommon
-                        .ex_wav
-                        .insert(ch.to_base_36_or_62(base62), (opt, s));
+                    bms.ex_wav.insert(ch.to_base_36_or_62(base62), (opt, s));
                 }
-                Cdda(n) => bms.uncommon.cdda = Some(*n),
-                MidiFile(s) => bms.uncommon.midi_file = Some(s),
+                Cdda(n) => bms.cdda = Some(*n),
+                MidiFile(s) => bms.midi_file = Some(s),
                 Bmp(ch, s) => {
                     bms.bmp.insert(ch.to_base_36_or_62(base62), s);
                 }
                 ExBmp(ch, argb, s) => {
-                    bms.uncommon
-                        .ex_bmp
-                        .insert(ch.to_base_36_or_62(base62), (argb, s));
+                    bms.ex_bmp.insert(ch.to_base_36_or_62(base62), (argb, s));
                 }
                 Bga(ch, bmp, pos) => {
-                    bms.uncommon.bga.insert(
+                    bms.bga.insert(
                         ch.to_base_36_or_62(base62),
                         (bmp.to_base_36_or_62(base62), pos),
                     );
                 }
                 AtBga(ch, bmp, pos) => {
-                    bms.uncommon.at_bga.insert(
+                    bms.at_bga.insert(
                         ch.to_base_36_or_62(base62),
                         (bmp.to_base_36_or_62(base62), pos),
                     );
                 }
-                PoorBga(n) => bms.uncommon.poor_bga = Some(*n),
+                PoorBga(n) => bms.poor_bga = Some(*n),
                 SwitchBga(ch, fr, time, line, r#loop, argb, data) => {
-                    bms.deprecated.switch_bga.insert(
+                    bms.switch_bga.insert(
                         ch.to_base_36_or_62(base62),
                         (*fr, *time, line.to_base_36(), *r#loop, argb, data),
                     );
                 }
                 Argb(ch, argb) => {
-                    bms.uncommon.argb.insert(ch.to_base_36_or_62(base62), argb);
+                    bms.argb.insert(ch.to_base_36_or_62(base62), argb);
                 }
-                VideoFile(s) => bms.uncommon.video_file = Some(s),
-                VideoFps(n) => bms.uncommon.video_fps = Some(*n),
-                VideoColors(n) => bms.uncommon.video_colors = Some(*n),
-                VideoDelay(n) => bms.uncommon.video_delay = Some(*n),
-                Movie(s) => bms.uncommon.movie = Some(s),
+                VideoFile(s) => bms.video_file = Some(s),
+                VideoFps(n) => bms.video_fps = Some(*n),
+                VideoColors(n) => bms.video_colors = Some(*n),
+                VideoDelay(n) => bms.video_delay = Some(*n),
+                Movie(s) => bms.movie = Some(s),
                 Seek(ch, n) => {
-                    bms.deprecated.seek.insert(ch.to_base_36_or_62(base62), *n);
+                    bms.seek.insert(ch.to_base_36_or_62(base62), *n);
                 }
                 ExCharacter(sprite_num, bmp, trim_rect, offset, abs_pos) => {
-                    bms.uncommon.ex_character = Some(super::bms::ExCharacter {
+                    bms.ex_character = Some(super::bms::ExCharacter {
                         sprite_num: *sprite_num,
                         bmp: *bmp,
                         trim_rect,
@@ -406,7 +399,7 @@ impl RawBms {
                 }
                 Preview(s) => bms.preview = Some(s),
                 Other(command, value) => {
-                    bms.uncommon.other.push((command, value));
+                    bms.other.push((command, value));
                 }
                 _ => (),
             }
@@ -542,10 +535,85 @@ pub struct Bms<'a> {
     /// ここで指定されていなければ、
     /// previewと名前が付いた音声ファイルを流すのが主流
     pub preview: Option<&'a str>,
-    /// あまり使われないコマンド
-    pub uncommon: UncommonHeader<'a>,
-    /// 非推奨のコマンド
-    pub deprecated: DeprecatedHeader<'a>,
+
+    // 以降あまり使われないコマンド
+    /// メインデータで指定可能な判定幅の設定
+    ///
+    /// 値はDefExRankと同じ扱いをすることが主流だが、DefExRankと同じように判定幅が実装依存
+    pub ex_rank: HashMap<usize, f64>,
+    pub character_file: Option<&'a str>,
+    /// 譜面制作者
+    pub maker: Option<&'a str>,
+    /// 曲選択時に表示するコメント
+    pub comment: Vec<&'a str>,
+    /// プレイ中に表示するテキスト
+    pub text: HashMap<usize, &'a str>,
+    /// 音声ファイルを読み込むときに参照するフォルダ
+    pub path_wav: Option<&'a str>,
+    /// 譜面の停止
+    ///
+    /// (小節数, 1000等分した小節内の位置, 停止ms)
+    ///
+    /// 位置が一致するコマンドが複数あったら停止時間は合計時間を参照する
+    pub stp: Vec<(usize, u32, f64)>,
+    /// オクターブモード / フットペダルモード
+    pub oct_fp: bool,
+    /// オプション適用
+    pub option: Vec<&'a str>,
+    /// オプション適用（譜面内で動的変更）
+    ///
+    /// チャンネルは"A6"
+    pub change_option: HashMap<usize, &'a str>,
+    /// WAVを加工する
+    ///
+    /// (ID, index, value)
+    ///
+    /// ID: 0.ピッチ 1.ボリューム 2.再生時間
+    ///
+    /// index: WAVコマンドのindex
+    ///
+    /// value: 0.基準は60で、1を半音と対応 1.パーセントで解釈 2.ミリ秒（0で変更なし）
+    pub wav_command: Vec<(i32, usize, f64)>,
+    pub ex_wav: HashMap<usize, (&'a [Option<f64>; 3], &'a str)>,
+    pub cdda: Option<u32>,
+    pub midi_file: Option<&'a str>,
+    pub ex_bmp: HashMap<usize, (&'a [u8; 4], &'a str)>,
+    pub bga: HashMap<usize, (usize, &'a [[f64; 2]; 3])>,
+    pub at_bga: HashMap<usize, (usize, &'a [[f64; 2]; 3])>,
+    pub poor_bga: Option<i32>,
+    pub argb: HashMap<usize, &'a [u8; 4]>,
+    pub video_file: Option<&'a str>,
+    pub video_fps: Option<f64>,
+    pub video_colors: Option<u32>,
+    pub video_delay: Option<u32>,
+    pub movie: Option<&'a str>,
+    pub ex_character: Option<ExCharacter<'a>>,
+
+    // 以降非推奨のコマンド
+    /// プレイ方法
+    ///
+    /// 主にメインデータから解析するのが主流
+    #[deprecated]
+    pub player: Option<PlayType>,
+    /// スクロール速度の基準BPM
+    ///
+    /// オプション側で基準とするBPMを最大、最小、最長、最初のBPMに合わせられるようにするべき
+    #[deprecated]
+    pub base_bpm: Option<f64>,
+    /// キーを押したときに表示するBGA
+    ///
+    /// 試験的に追加された
+    #[deprecated]
+    pub switch_bga:
+        HashMap<usize, (f64, f64, usize, bool, &'a [u8; 4], &'a [Channel])>,
+    /// ビデオの再生位置を調整
+    ///
+    /// 提案されたプレイヤーで削除済み
+    #[deprecated]
+    pub seek: HashMap<usize, f64>,
+
+    /// その他のコマンド
+    pub other: Vec<(&'a str, &'a str)>,
 }
 
 /// 一小節ごとのメインデータ
@@ -658,45 +726,6 @@ impl Default for MainData<'_> {
     }
 }
 
-/// あまり使われないヘッダー
-#[derive(Default, Debug, PartialEq)]
-pub struct UncommonHeader<'a> {
-    /// メインデータで指定可能な判定幅の設定
-    ///
-    /// 値はDefExRankと同じ扱いをすることが主流だが、DefExRankと同じように判定幅が実装依存
-    pub ex_rank: HashMap<usize, f64>,
-    pub character_file: Option<&'a str>,
-    /// 譜面制作者
-    pub maker: Option<&'a str>,
-    /// 曲選択時に表示するコメント
-    pub comment: Vec<&'a str>,
-    /// プレイ中に表示するテキスト
-    pub text: HashMap<usize, &'a str>,
-    /// 音声ファイルを読み込むときに参照するフォルダ
-    pub path_wav: Option<&'a str>,
-    pub stp: Vec<(usize, u32, f64)>,
-    pub oct_fp: bool,
-    pub option: Vec<(&'a str, &'a str)>,
-    pub change_option: HashMap<usize, (&'a str, &'a str)>,
-    pub wav_command: Vec<(i32, usize, f64)>,
-    pub ex_wav: HashMap<usize, (&'a [Option<f64>; 3], &'a str)>,
-    pub cdda: Option<u32>,
-    pub midi_file: Option<&'a str>,
-    pub ex_bmp: HashMap<usize, (&'a [u8; 4], &'a str)>,
-    pub bga: HashMap<usize, (usize, &'a [[f64; 2]; 3])>,
-    pub at_bga: HashMap<usize, (usize, &'a [[f64; 2]; 3])>,
-    pub poor_bga: Option<i32>,
-    pub argb: HashMap<usize, &'a [u8; 4]>,
-    pub video_file: Option<&'a str>,
-    pub video_fps: Option<f64>,
-    pub video_colors: Option<u32>,
-    pub video_delay: Option<u32>,
-    pub movie: Option<&'a str>,
-    pub ex_character: Option<ExCharacter<'a>>,
-    /// その他のコマンド
-    pub other: Vec<(&'a str, &'a str)>,
-}
-
 /// Extended-Characterファイル
 #[derive(Debug, PartialEq)]
 pub struct ExCharacter<'a> {
@@ -705,28 +734,6 @@ pub struct ExCharacter<'a> {
     pub trim_rect: &'a [[f64; 2]; 2],
     pub offset: Option<&'a [f64; 2]>,
     pub abs_pos: Option<&'a [f64; 2]>,
-}
-
-/// 非推奨のヘッダー
-#[derive(Default, Debug, PartialEq)]
-pub struct DeprecatedHeader<'a> {
-    /// プレイ方法
-    ///
-    /// 主にメインデータから解析するのが主流
-    pub player: Option<PlayType>,
-    /// スクロール速度の基準BPM
-    ///
-    /// オプション側で基準とするBPMを最大、最小、最長、最初のBPMに合わせられるようにするべき
-    pub base_bpm: Option<f64>,
-    /// キーを押したときに表示するBGA
-    ///
-    /// 試験的に追加された
-    pub switch_bga:
-        HashMap<usize, (f64, f64, usize, bool, &'a [u8; 4], &'a [Channel])>,
-    /// ビデオの再生位置を調整
-    ///
-    /// 提案されたプレイヤーで削除済み
-    pub seek: HashMap<usize, f64>,
 }
 
 /// プレイ方式
