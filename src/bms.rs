@@ -189,7 +189,7 @@ impl RawBms {
         &self.all_wav_files
     }
     #[allow(deprecated)]
-    pub fn make_bms(&self, mut rng: impl rand::RngCore) -> Bms {
+    pub fn make_bms(&self, mut rng: impl rand::RngCore) -> Bms<'_> {
         use token::Command::*;
         let mut commands = vec![];
         self.raw_bms.get_token_vec(&mut commands, &mut rng);
@@ -326,8 +326,7 @@ impl RawBms {
                 OctFp => bms.oct_fp = true,
                 Option(opt) => bms.option.push(opt),
                 ChangeOption(ch, opt) => {
-                    bms.change_option
-                        .insert(ch.to_base_36_or_62(base62), opt);
+                    bms.change_option.insert(ch.to_base_36_or_62(base62), opt);
                 }
                 Wav(ch, s) => {
                     bms.wav.insert(ch.to_base_36_or_62(base62), s);
